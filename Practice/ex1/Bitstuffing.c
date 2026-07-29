@@ -124,7 +124,7 @@ int main()
                 printf("\nInvalid Choice!\n");
         }
 
-    } while(choice != 5);
+    } while(choice != 3);
 
     return 0;
 }
