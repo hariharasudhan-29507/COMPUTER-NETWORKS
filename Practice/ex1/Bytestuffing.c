@@ -1,98 +1,119 @@
+[24bcs040@mepcolinux ex1]$[24bcs040@mepcolinux ex1]$cat ByteStuffing.c
 #include <stdio.h>
 #include <string.h>
 
-char binary[1000];
+#define FLAG_BIN "01111110"
+#define ESC_BIN  "01111101"
 
-// Function to convert string into binary (ASCII)
-void stringToBinary(char str[])
-{
-    int i, j, k = 0;
+// Global arrays to store data as arrays of 8-bit binary strings
+char raw_binary[100][9];
+char stuffed_binary[500][9];
+char destuffed_binary[100][9];
 
-    printf("\nASCII Values:\n");
-    for(i = 0; str[i] != '\0'; i++)
-        printf("%c = %d\n", str[i], str[i]);
-
-    printf("\nBinary Representation:\n");
-
-    for(i = 0; str[i] != '\0'; i++)
-    {
-        for(j = 7; j >= 0; j--)
-        {
-            binary[k++] = ((str[i] >> j) & 1) + '0';
-            printf("%c", binary[k - 1]);
-        }
+// Converts a single character into an 8-bit binary string
+void charToBinaryStr(char character, char binary_str[]) {
+    int bit_index;
+    for(bit_index = 7; bit_index >= 0; bit_index--) {
+        binary_str[7 - bit_index] = ((character >> bit_index) & 1) + '0';
     }
-
-    binary[k] = '\0';
-    printf("\n");
+    binary_str[8] = '\0';
 }
 
-void byteStuffing()
-{
+// Converts an 8-bit binary string back into a single character
+char binaryStrToChar(char binary_str[]) {
+    int bit_index, decimal_sum = 0;
+    for(bit_index = 0; bit_index < 8; bit_index++) {
+        decimal_sum = decimal_sum * 2 + (binary_str[bit_index] - '0');
+    }
+    return (char)decimal_sum;
+}
+
+// Handles binary byte stuffing
+void byteStuffing() {
     char input[100];
-    char stuffed[500];
-    char FLAG = 'F';
-    char ESC = 'E';
-    int i, j = 0;
+    int i, total_bytes = 0, len;
 
     printf("Enter a string: ");
     scanf("%s", input);
+    len = strlen(input);
 
-    stuffed[j++] = FLAG;
-
-    for(i = 0; input[i] != '\0'; i++)
-    {
-        if(input[i] == FLAG || input[i] == ESC)
-            stuffed[j++] = ESC;
-
-        stuffed[j++] = input[i];
+    // 1. Convert input characters to binary blocks
+    printf("\nASCII to Binary Conversion:\n");
+    for(i = 0; i < len; i++) {
+        charToBinaryStr(input[i], raw_binary[i]);
+        printf("%c = %s\n", input[i], raw_binary[i]);
     }
-    stuffed[j++] = FLAG;
-    stuffed[j] = '\0';
 
-    printf("\nByte Stuffed Frame:\n%s\n", stuffed);
-    printf("\nBinary Form of Stuffed Frame:\n");
-    stringToBinary(stuffed);
+    // 2. Add starting FLAG
+    strcpy(stuffed_binary[total_bytes++], FLAG_BIN);
+
+    // 3. Perform stuffing on binary patterns
+    for(i = 0; i < len; i++) {
+        if(strcmp(raw_binary[i], FLAG_BIN) == 0 || strcmp(raw_binary[i], ESC_BIN) == 0) {
+            strcpy(stuffed_binary[total_bytes++], ESC_BIN);
+        }
+        strcpy(stuffed_binary[total_bytes++], raw_binary[i]);
+    }
+
+    // 4. Add ending FLAG
+    strcpy(stuffed_binary[total_bytes++], FLAG_BIN);
+
+    // 5. Display output
+    printf("\nByte Stuffed Frame (Binary Blocks):\n");
+    for(i = 0; i < total_bytes; i++) {
+        printf("%s ", stuffed_binary[i]);
+    }
+    printf("\n\nContinuous Bitstream:\n");
+    for(i = 0; i < total_bytes; i++) {
+        printf("%s", stuffed_binary[i]);
+    }
+    printf("\n");
 }
 
-// Byte Destuffing
-void byteDestuffing()
-{
-    char frame[500], destuffed[500];
-    char FLAG = 'F';
-    char ESC = 'E';
-    int i, j = 0;
-    int len;
+// Handles binary byte destuffing
+void byteDestuffing() {
+    int total_blocks, i;
+    int destuffed_count = 0;
+    char restored_text[100];
 
-    printf("Enter Stuffed Frame:\n");
-    scanf("%s", frame);
-    len = strlen(frame);
+    printf("Enter the number of binary blocks in the stuffed frame: ");
+    if (scanf("%d", &total_blocks) != 1) return;
 
-    for(i = 1; i < len - 1; i++)
-    {
-        if(frame[i] == ESC)
-            i++;
-        destuffed[j++] = frame[i];
+    printf("Enter the %d space-separated binary blocks:\n", total_blocks);
+    for(i = 0; i < total_blocks; i++) {
+        scanf("%s", stuffed_binary[i]);
     }
-    destuffed[j] = '\0';
 
-    printf("\nDestuffed Data:\n%s\n", destuffed);
-    printf("\nBinary Form of Destuffed Data:\n");
-    stringToBinary(destuffed);
+    // Process blocks skipping outer boundaries (index 1 to total_blocks - 2)
+    for(i = 1; i < total_blocks - 1; i++) {
+        if(strcmp(stuffed_binary[i], ESC_BIN) == 0) {
+            i++; // Skip the escape pattern block
+        }
+        strcpy(destuffed_binary[destuffed_count++], stuffed_binary[i]);
+    }
+
+    // Convert binary strings back to characters
+    printf("\n--- Destuffed Data ---\n");
+    for(i = 0; i < destuffed_count; i++) {
+        restored_text[i] = binaryStrToChar(destuffed_binary[i]);
+        printf("Block %s -> %c\n", destuffed_binary[i], restored_text[i]);
+    }
+    restored_text[destuffed_count] = '\0';
+
+    printf("\nFinal Restored Text: %s\n", restored_text);
 }
-int main()
-{
+
+int main() {
     int choice;
-    do{ 
-        printf("\n   FRAMING PROTOCOL IMPLEMENTATION\n\n");
-        printf("\n1. Byte Stuffing");
-        printf("\n2. Byte Destuffing");
-        printf("\n3. Exit");
-        printf("\n\nEnter your choice: ");
-        scanf("%d", &choice);
+    do {
+        printf("\n   FRAMING PROTOCOL IMPLEMENTATION (BINARY STUFFING)\n\n");
+        printf("1. Byte Stuffing\n");
+        printf("2. Byte Destuffing\n");
+        printf("3. Exit\n");
+        printf("\nEnter your choice: ");
+        if (scanf("%d", &choice) != 1) break;
 
-        switch(choice)
-        {   
+        switch(choice) {
             case 1:
                 byteStuffing();
                 break;
@@ -106,6 +127,6 @@ int main()
                 printf("\nInvalid Choice!\n");
         }
     } while(choice != 3);
-  
+
     return 0;
 }
