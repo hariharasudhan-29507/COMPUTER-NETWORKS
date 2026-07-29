@@ -56,7 +56,9 @@ void bitStuffing()
     }
 
     stuffed[j] = '\0';
-    printf("\nBit Stuffed Data:\n%s\n", stuffed);
+
+    printf("\nBit Stuffed Data:\n %s \n",stuffed);
+    printf("\nBit Stuffed Frame:\n0111111 %s 0111111\n", stuffed);
 }
 
 // Bit Destuffing
