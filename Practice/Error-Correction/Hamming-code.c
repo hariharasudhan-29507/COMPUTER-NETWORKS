@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <string.h>
-#include <math.h>
 
 int main() {
     char data[50];
@@ -14,7 +13,7 @@ int main() {
     datalen = strlen(data);
 
     r = 0;
-    while (pow(2, r) < datalen + r + 1) {
+    while ((1 << r) < datalen + r + 1) {
         r = r + 1;
     }
 
@@ -31,7 +30,7 @@ int main() {
     }
 
     for (i = 0; i < r; i++) {
-        pos = pow(2, i);
+        pos = 1 << i;
         int count = 0;
         for (j = pos; j <= codelen; j = j + 1) {
             if (((j / pos) % 2) == 1) {
@@ -82,7 +81,7 @@ int main() {
 
     int syndrome = 0;
     for (i = 0; i < r; i++) {
-        pos = pow(2, i);
+        pos = 1 << i;
         int count = 0;
         for (j = pos; j <= codelen; j = j + 1) {
             if (((j / pos) % 2) == 1) {
