@@ -28,18 +28,44 @@ int onescomplementadd(char *sum, char *segment, int segsize) {
     return carry;
 }
 
-int main() {
-    char data[100], segments[20][20], sum[20], checksum[20], complement[20];
-    char codeword[100], received[100];
-    int datalen, segsize, numsegs, i, j, carry, choice, errorpos, codelen;
+void char_to_binary(char ch, char *binary) {
+   int i ;
+   for ( i = 7; i >= 0; i--) {
+        binary[7 - i] = ((ch >> i) & 1) ? '1' : '0';
+    }
+    binary[8] = '\0';
+}
 
-    printf("Enter data bits as a binary string: ");
-    scanf("%s", data);
+int main() {
+    char input[100];
+    char data[1000]; // increased size to hold binary representation
+    char segments[20][20], sum[20], checksum[20], complement[20];
+    char codeword[1000], received[1000];
+    int datalen, segsize, numsegs, i, j, carry, choice, errorpos, codelen;
+    int num_errors, k;
+
+    printf("Enter data as a string: ");
+    scanf("%s", input);
+
+    // Convert each character to 8-bit binary
+    datalen = strlen(input);
+    int total_bits = datalen * 8;
+    int pos = 0;
+    for (i = 0; i < datalen; i++) {
+        char binary[9];
+        char_to_binary(input[i], binary);
+        for (j = 0; j < 8; j++) {
+            data[pos++] = binary[j];
+        }
+    }
+    data[pos] = '\0';
+    datalen = total_bits;
+
+    printf("Binary representation: %s\n", data);
 
     printf("Enter segment size (number of bits per segment): ");
     scanf("%d", &segsize);
 
-    datalen = strlen(data);
     numsegs = datalen / segsize;
 
     for (i = 0; i < numsegs; i++) {
@@ -100,12 +126,17 @@ int main() {
     scanf("%d", &choice);
 
     if (choice == 1) {
-        printf("Enter bit position to flip (0 to %d): ", codelen - 1);
-        scanf("%d", &errorpos);
-        if (received[errorpos] == '0') {
-            received[errorpos] = '1';
-        } else {
-            received[errorpos] = '0';
+        printf("Enter number of bit errors to introduce: ");
+        scanf("%d", &num_errors);
+
+        for (k = 0; k < num_errors; k++) {
+            printf("Enter bit position %d to flip (0 to %d): ", k + 1, codelen - 1);
+            scanf("%d", &errorpos);
+            if (received[errorpos] == '0') {
+                received[errorpos] = '1';
+            } else {
+                received[errorpos] = '0';
+            }
         }
     }
 
