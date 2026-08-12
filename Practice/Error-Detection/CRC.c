@@ -1,18 +1,44 @@
 #include <stdio.h>
 #include <string.h>
 
-int main() {
-    char data[50], generator[20], codeword[50], received[50];
-    char remainder[20], temp[50];
-    int datalen, genlen, codelen, i, j, choice, errorpos;
+void char_to_binary(char ch, char *binary) {
+    int i;
+    for (i = 7; i >= 0; i--) {
+        binary[7 - i] = ((ch >> i) & 1) ? '1' : '0';
+    }
+    binary[8] = '\0';
+}
 
-    printf("Enter data bits as a binary string: ");
-    scanf("%s", data);
+int main() {
+    char input[50];
+    char data[1000]; // increased size for binary representation
+    char generator[20], codeword[1000], received[1000];
+    char remainder[20], temp[1000];
+    int datalen, genlen, codelen, i, j, choice, errorpos;
+    int num_errors, k;
+
+    printf("Enter data as a string: ");
+    scanf("%s", input);
+
+    // Convert each character to 8-bit binary
+    int input_len = strlen(input);
+    int total_bits = input_len * 8;
+    int pos = 0;
+    for (i = 0; i < input_len; i++) {
+        char binary[9];
+        char_to_binary(input[i], binary);
+        for (j = 0; j < 8; j++) {
+            data[pos++] = binary[j];
+        }
+    }
+    data[pos] = '\0';
+    datalen = total_bits;
+
+    printf("Binary representation: %s\n", data);
 
     printf("Enter generator (divisor) bits as a binary string: ");
     scanf("%s", generator);
 
-    datalen = strlen(data);
     genlen = strlen(generator);
     codelen = datalen + genlen - 1;
 
@@ -74,12 +100,17 @@ int main() {
     scanf("%d", &choice);
 
     if (choice == 1) {
-        printf("Enter bit position to flip (0 to %d): ", codelen - 1);
-        scanf("%d", &errorpos);
-        if (received[errorpos] == '0') {
-            received[errorpos] = '1';
-        } else {
-            received[errorpos] = '0';
+        printf("Enter number of bit errors to introduce: ");
+        scanf("%d", &num_errors);
+
+        for (k = 0; k < num_errors; k++) {
+            printf("Enter bit position %d to flip (0 to %d): ", k + 1, codelen - 1);
+            scanf("%d", &errorpos);
+            if (received[errorpos] == '0') {
+                received[errorpos] = '1';
+            } else {
+                received[errorpos] = '0';
+            }
         }
     }
 
