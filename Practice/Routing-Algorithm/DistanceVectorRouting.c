@@ -7,6 +7,7 @@
 int n;
 char name[MAX][20];
 int cost[MAX][MAX];
+int linkCost[MAX][MAX];
 int nextHop[MAX][MAX];
 
 void displayTable(int i)
@@ -82,6 +83,9 @@ void readInput()
             }
         }
     }
+    for (int i = 0; i < n; i++)
+        for (int j = 0; j < n; j++)
+            linkCost[i][j] = cost[i][j];
 }
 
 void initTables()
@@ -98,6 +102,13 @@ void initTables()
                 nextHop[i][j] = -1;
         }
     }
+}
+
+void resetCost()
+{
+    for (int i = 0; i < n; i++)
+        for (int j = 0; j < n; j++)
+            cost[i][j] = linkCost[i][j];
 }
 
 void runDistanceVector()
@@ -128,6 +139,63 @@ void runDistanceVector()
     }
 }
 
+void changeEdgeCost()
+{
+    char u[20], v[20];
+    int newCost;
+    printf("Enter first node: ");
+    scanf("%s", u);
+    printf("Enter second node: ");
+    scanf("%s", v);
+    int idx1 = -1, idx2 = -1;
+    for (int i = 0; i < n; i++)
+    {
+        if (strcmp(name[i], u) == 0) idx1 = i;
+        if (strcmp(name[i], v) == 0) idx2 = i;
+    }
+    if (idx1 == -1 || idx2 == -1 || idx1 == idx2)
+    {
+        printf("Invalid node names!\n");
+        return;
+    }
+    printf("Enter new cost: ");
+    scanf("%d", &newCost);
+    linkCost[idx1][idx2] = newCost;
+    linkCost[idx2][idx1] = newCost;
+    resetCost();
+    initTables();
+    runDistanceVector();
+    printf("Edge cost updated and routing table recalculated.\n");
+    displayMatrix("FINAL ROUTING TABLE");
+}
+
+void dropEdge()
+{
+    char u[20], v[20];
+    printf("Enter first node: ");
+    scanf("%s", u);
+    printf("Enter second node: ");
+    scanf("%s", v);
+    int idx1 = -1, idx2 = -1;
+    for (int i = 0; i < n; i++)
+    {
+        if (strcmp(name[i], u) == 0) idx1 = i;
+        if (strcmp(name[i], v) == 0) idx2 = i;
+    }
+    if (idx1 == -1 || idx2 == -1 || idx1 == idx2)
+    {
+        printf("Invalid node names!\n");
+        return;
+    }
+    linkCost[idx1][idx2] = INF;
+    linkCost[idx2][idx1] = INF;
+    resetCost();
+    initTables();
+    runDistanceVector();
+    printf("Edge dropped and routing table recalculated.\n");
+    displayMatrix("FINAL ROUTING TABLE");
+}
+
 int main()
 {
     readInput();
@@ -141,7 +209,9 @@ int main()
         printf("1. Display final table of one router\n");
         printf("2. Display final tables of all routers\n");
         printf("3. Display final routing table (matrix form)\n");
-        printf("4. Exit\n");
+        printf("4. Change cost of an edge\n");
+        printf("5. Drop an edge\n");
+        printf("6. Exit\n");
         printf("Enter choice: ");
         scanf("%d", &choice);
         if (choice == 1)
@@ -165,7 +235,15 @@ int main()
         {
             displayMatrix("FINAL ROUTING TABLE");
         }
-    } while (choice != 4);
+        else if (choice == 4)
+        {
+            changeEdgeCost();
+        }
+        else if (choice == 5)
+        {
+            dropEdge();
+        }
+    } while (choice != 6);
     printf("\nProgram terminated. Final result displayed above.\n");
     return 0;
 }
