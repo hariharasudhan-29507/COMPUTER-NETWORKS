@@ -29,15 +29,25 @@ void displayLSP()
 void displayTable(int i)
 {
     printf("\nRouting Table of Router %s\n", name[i]);
-    printf("%-12s%-12s%-12s\n", "Destination", "Cost", "NextHop");
+    printf("%-12s%-12s%-12s%s\n", "Destination", "Cost", "NextHop", "Path");
     for (int j = 0; j < n; j++)
     {
         if (i == j) continue;
         printf("%-12s", name[j]);
         if (dist[i][j] >= INF)
-            printf("%-12s%-12s\n", "INF", "-");
+            printf("%-12s%-12s%s\n", "INF", "-", "-");
         else
-            printf("%-12d%-12s\n", dist[i][j], name[nextHop[i][j]]);
+        {
+            printf("%-12d%-12s", dist[i][j], name[nextHop[i][j]]);
+            int cur = i;
+            printf("%s", name[cur]);
+            while (cur != j)
+            {
+                cur = nextHop[cur][j];
+                printf(" -> %s", name[cur]);
+            }
+            printf("\n");
+        }
     }
 }
 
