@@ -121,15 +121,15 @@ void runDistanceVector()
         {
             for (int j = 0; j < n; j++)
             {
-                if (i == j || cost[i][j] >= INF)
+                if (i == j || linkCost[i][j] >= INF)
                     continue;
                 for (int k = 0; k < n; k++)
                 {
                     if (i == k) continue;
                     if (cost[j][k] < INF &&
-                        cost[i][j] + cost[j][k] < cost[i][k])
+                        linkCost[i][j] + cost[j][k] < cost[i][k])
                     {
-                        cost[i][k] = cost[i][j] + cost[j][k];
+                        cost[i][k] = linkCost[i][j] + cost[j][k];
                         nextHop[i][k] = j;
                         updated = 1;
                     }
@@ -158,6 +158,10 @@ void changeEdgeCost()
         printf("Invalid node names!\n");
         return;
     }
+    if (linkCost[idx1][idx2] >= INF)
+        printf("Existing cost between %s and %s: INF (no direct link)\n", name[idx1], name[idx2]);
+    else
+        printf("Existing cost between %s and %s: %d\n", name[idx1], name[idx2], linkCost[idx1][idx2]);
     printf("Enter new cost: ");
     scanf("%d", &newCost);
     linkCost[idx1][idx2] = newCost;
@@ -196,6 +200,52 @@ void dropEdge()
     displayMatrix("FINAL ROUTING TABLE");
 }
 
+void printShortestPath()
+{
+    char sname[20], dname[20];
+    printf("Enter source router: ");
+    scanf("%s", sname);
+    printf("Enter destination router: ");
+    scanf("%s", dname);
+    int src = -1, dest = -1;
+    for (int i = 0; i < n; i++)
+    {
+        if (strcmp(name[i], sname) == 0) src = i;
+        if (strcmp(name[i], dname) == 0) dest = i;
+    }
+    if (src == -1 || dest == -1)
+    {
+        printf("Invalid router name(s)!\n");
+        return;
+    }
+    if (src == dest)
+    {
+        printf("Source and destination are the same: %s\n", name[src]);
+        return;
+    }
+    if (cost[src][dest] >= INF)
+    {
+        printf("No path exists from %s to %s\n", name[src], name[dest]);
+        return;
+    }
+    printf("Shortest path from %s to %s (cost %d): ", name[src], name[dest], cost[src][dest]);
+    int cur = src;
+    printf("%s", name[cur]);
+    int hops = 0;
+    while (cur != dest)
+    {
+        if (nextHop[cur][dest] == -1 || hops > n)
+        {
+            printf(" -> [no path]");
+            break;
+        }
+        cur = nextHop[cur][dest];
+        printf(" -> %s", name[cur]);
+        hops++;
+    }
+    printf("\n");
+}
+
 int main()
 {
     readInput();
@@ -211,7 +261,8 @@ int main()
         printf("3. Display final routing table (matrix form)\n");
         printf("4. Change cost of an edge\n");
         printf("5. Drop an edge\n");
-        printf("6. Exit\n");
+        printf("6. Print shortest path between two nodes\n");
+        printf("7. Exit\n");
         printf("Enter choice: ");
         scanf("%d", &choice);
         if (choice == 1)
@@ -243,7 +294,11 @@ int main()
         {
             dropEdge();
         }
-    } while (choice != 6);
+        else if (choice == 6)
+        {
+            printShortestPath();
+        }
+    } while (choice != 7);
     printf("\nProgram terminated. Final result displayed above.\n");
     return 0;
 }
