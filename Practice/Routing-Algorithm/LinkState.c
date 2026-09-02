@@ -9,7 +9,6 @@ char name[MAX][20];
 int cost[MAX][MAX];
 int linkCost[MAX][MAX];
 int nextHop[MAX][MAX];
-int pathCount;
 
 void displayTable(int i)
 {
@@ -160,9 +159,9 @@ void changeEdgeCost()
         return;
     }
     if (linkCost[idx1][idx2] >= INF)
-        printf("Current cost between %s and %s: INF (no direct link)\n", name[idx1], name[idx2]);
+        printf("Existing cost between %s and %s: INF (no direct link)\n", name[idx1], name[idx2]);
     else
-        printf("Current cost between %s and %s: %d\n", name[idx1], name[idx2], linkCost[idx1][idx2]);
+        printf("Existing cost between %s and %s: %d\n", name[idx1], name[idx2], linkCost[idx1][idx2]);
     printf("Enter new cost: ");
     scanf("%d", &newCost);
     linkCost[idx1][idx2] = newCost;
@@ -201,7 +200,7 @@ void dropEdge()
     displayMatrix("FINAL ROUTING TABLE");
 }
 
-void printShortestPathBetweenNodes()
+void printShortestPath()
 {
     char sname[20], dname[20];
     printf("Enter source router: ");
@@ -245,68 +244,6 @@ void printShortestPathBetweenNodes()
     printf("\n");
 }
 
-void findAllPathsUtil(int u, int dest, int visited[], int path[], int pathLen)
-{
-    visited[u] = 1;
-    path[pathLen] = u;
-    pathLen++;
-    if (u == dest)
-    {
-        pathCount++;
-        for (int i = 0; i < pathLen; i++)
-        {
-            printf("%s", name[path[i]]);
-            if (i < pathLen - 1) printf(" -> ");
-        }
-        printf(" (cost: ");
-        int totalCost = 0;
-        for (int i = 0; i < pathLen - 1; i++)
-            totalCost += linkCost[path[i]][path[i+1]];
-        printf("%d)\n", totalCost);
-    }
-    else
-    {
-        for (int v = 0; v < n; v++)
-        {
-            if (!visited[v] && linkCost[u][v] < INF && u != v)
-                findAllPathsUtil(v, dest, visited, path, pathLen);
-        }
-    }
-    visited[u] = 0;
-}
-
-void printAllPathsBetweenNodes()
-{
-    char sname[20], dname[20];
-    printf("Enter source router: ");
-    scanf("%s", sname);
-    printf("Enter destination router: ");
-    scanf("%s", dname);
-    int src = -1, dest = -1;
-    for (int i = 0; i < n; i++)
-    {
-        if (strcmp(name[i], sname) == 0) src = i;
-        if (strcmp(name[i], dname) == 0) dest = i;
-    }
-    if (src == -1 || dest == -1)
-    {
-        printf("Invalid router name(s)!\n");
-        return;
-    }
-    if (src == dest)
-    {
-        printf("Source and destination are the same: %s\n", name[src]);
-        return;
-    }
-    int visited[MAX] = {0};
-    int path[MAX];
-    pathCount = 0;
-    printf("All possible paths from %s to %s:\n", name[src], name[dest]);
-    findAllPathsUtil(src, dest, visited, path, 0);
-    if (pathCount == 0)
-        printf("No paths found.\n");
-}
-
 int main()
 {
     readInput();
@@ -323,8 +260,7 @@ int main()
         printf("4. Change cost of an edge\n");
         printf("5. Drop an edge\n");
         printf("6. Print shortest path between two nodes\n");
-        printf("7. Print all possible paths between two nodes\n");
-        printf("8. Exit\n");
+        printf("7. Exit\n");
         printf("Enter choice: ");
         scanf("%d", &choice);
         if (choice == 1)
@@ -358,13 +294,9 @@ int main()
         }
         else if (choice == 6)
         {
-            printShortestPathBetweenNodes();
+            printShortestPath();
         }
-        else if (choice == 7)
-        {
-            printAllPathsBetweenNodes();
-        }
-    } while (choice != 8);
+    } while (choice != 7);
     printf("\nProgram terminated. Final result displayed above.\n");
     return 0;
 }
