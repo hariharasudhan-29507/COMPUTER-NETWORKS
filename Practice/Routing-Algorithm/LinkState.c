@@ -8,7 +8,25 @@ int n;
 char name[MAX][20];
 int cost[MAX][MAX];
 int linkCost[MAX][MAX];
+int dist[MAX][MAX];
 int nextHop[MAX][MAX];
+int pathCount;
+
+void displayLSP()
+{
+    printf("\n================ LINK STATE PACKETS (Direct Links) ================\n");
+    for (int i = 0; i < n; i++)
+    {
+        printf("\nLSP of Router %s\n", name[i]);
+        printf("%-12s%-12s\n", "Neighbor", "Cost");
+        for (int j = 0; j < n; j++)
+        {
+            if (i == j) continue;
+            if (linkCost[i][j] < INF)
+                printf("%-12s%-12d\n", name[j], linkCost[i][j]);
+        }
+    }
+}
 
 void displayTable(int i)
 {
@@ -18,10 +36,10 @@ void displayTable(int i)
     {
         if (i == j) continue;
         printf("%-12s", name[j]);
-        if (cost[i][j] >= INF)
+        if (dist[i][j] >= INF)
             printf("%-12s%-12s\n", "INF", "-");
         else
-            printf("%-12d%-12s\n", cost[i][j], name[nextHop[i][j]]);
+            printf("%-12d%-12s\n", dist[i][j], name[nextHop[i][j]]);
     }
 }
 
@@ -31,7 +49,7 @@ void displayAllTables()
         displayTable(i);
 }
 
-void displayMatrix(const char *title)
+void displayMatrix(const char *title, int mat[MAX][MAX])
 {
     printf("\n================ %s ================\n\n", title);
     printf("%-14s", "Info Stored");
@@ -43,10 +61,10 @@ void displayMatrix(const char *title)
         printf("%-14s", name[i]);
         for (int j = 0; j < n; j++)
         {
-            if (cost[i][j] >= INF)
+            if (mat[i][j] >= INF)
                 printf("%-6s", "INF");
             else
-                printf("%-6d", cost[i][j]);
+                printf("%-6d", mat[i][j]);
         }
         printf("\n");
     }
@@ -88,55 +106,49 @@ void readInput()
             linkCost[i][j] = cost[i][j];
 }
 
-void initTables()
+void dijkstra(int s)
 {
+    int visited[MAX] = {0};
     for (int i = 0; i < n; i++)
     {
-        for (int j = 0; j < n; j++)
-        {
-            if (i == j)
-                nextHop[i][j] = i;
-            else if (cost[i][j] < INF)
-                nextHop[i][j] = j;
-            else
-                nextHop[i][j] = -1;
-        }
+        dist[s][i] = linkCost[s][i];
+        if (i != s && linkCost[s][i] < INF)
+            nextHop[s][i] = i;
+        else
+            nextHop[s][i] = -1;
     }
-}
-
-void resetCost()
-{
-    for (int i = 0; i < n; i++)
-        for (int j = 0; j < n; j++)
-            cost[i][j] = linkCost[i][j];
-}
-
-void runDistanceVector()
-{
-    int updated = 1;
-    while (updated)
+    dist[s][s] = 0;
+    nextHop[s][s] = s;
+    visited[s] = 1;
+    for (int count = 1; count < n; count++)
     {
-        updated = 0;
+        int u = -1, minDist = INF;
         for (int i = 0; i < n; i++)
         {
-            for (int j = 0; j < n; j++)
+            if (!visited[i] && dist[s][i] < minDist)
             {
-                if (i == j || cost[i][j] >= INF)
-                    continue;
-                for (int k = 0; k < n; k++)
-                {
-                    if (i == k) continue;
-                    if (cost[j][k] < INF &&
-                        cost[i][j] + cost[j][k] < cost[i][k])
-                    {
-                        cost[i][k] = cost[i][j] + cost[j][k];
-                        nextHop[i][k] = j;
-                        updated = 1;
-                    }
-                }
+                minDist = dist[s][i];
+                u = i;
+            }
+        }
+        if (u == -1) break;
+        visited[u] = 1;
+        for (int v = 0; v < n; v++)
+        {
+            if (!visited[v] && linkCost[u][v] < INF &&
+                dist[s][u] + linkCost[u][v] < dist[s][v])
+            {
+                dist[s][v] = dist[s][u] + linkCost[u][v];
+                nextHop[s][v] = (u == s) ? v : nextHop[s][u];
             }
         }
     }
+}
+
+void runLinkState()
+{
+    for (int i = 0; i < n; i++)
+        dijkstra(i);
 }
 
 void changeEdgeCost()
@@ -166,11 +178,9 @@ void changeEdgeCost()
     scanf("%d", &newCost);
     linkCost[idx1][idx2] = newCost;
     linkCost[idx2][idx1] = newCost;
-    resetCost();
-    initTables();
-    runDistanceVector();
+    runLinkState();
     printf("Edge cost updated and routing table recalculated.\n");
-    displayMatrix("FINAL ROUTING TABLE");
+    displayMatrix("FINAL ROUTING TABLE", dist);
 }
 
 void dropEdge()
@@ -186,117 +196,4 @@ void dropEdge()
         if (strcmp(name[i], u) == 0) idx1 = i;
         if (strcmp(name[i], v) == 0) idx2 = i;
     }
-    if (idx1 == -1 || idx2 == -1 || idx1 == idx2)
-    {
-        printf("Invalid node names!\n");
-        return;
-    }
-    linkCost[idx1][idx2] = INF;
-    linkCost[idx2][idx1] = INF;
-    resetCost();
-    initTables();
-    runDistanceVector();
-    printf("Edge dropped and routing table recalculated.\n");
-    displayMatrix("FINAL ROUTING TABLE");
-}
-
-void printShortestPath()
-{
-    char sname[20], dname[20];
-    printf("Enter source router: ");
-    scanf("%s", sname);
-    printf("Enter destination router: ");
-    scanf("%s", dname);
-    int src = -1, dest = -1;
-    for (int i = 0; i < n; i++)
-    {
-        if (strcmp(name[i], sname) == 0) src = i;
-        if (strcmp(name[i], dname) == 0) dest = i;
-    }
-    if (src == -1 || dest == -1)
-    {
-        printf("Invalid router name(s)!\n");
-        return;
-    }
-    if (src == dest)
-    {
-        printf("Source and destination are the same: %s\n", name[src]);
-        return;
-    }
-    if (cost[src][dest] >= INF)
-    {
-        printf("No path exists from %s to %s\n", name[src], name[dest]);
-        return;
-    }
-    printf("Shortest path from %s to %s (cost %d): ", name[src], name[dest], cost[src][dest]);
-    int cur = src;
-    printf("%s", name[cur]);
-    while (cur != dest)
-    {
-        cur = nextHop[cur][dest];
-        if (cur == -1)
-        {
-            printf(" -> [no path]");
-            break;
-        }
-        printf(" -> %s", name[cur]);
-    }
-    printf("\n");
-}
-
-int main()
-{
-    readInput();
-    initTables();
-    displayMatrix("INITIAL ROUTING TABLE");
-    runDistanceVector();
-    int choice;
-    do
-    {
-        printf("\n----- MENU -----\n");
-        printf("1. Display final table of one router\n");
-        printf("2. Display final tables of all routers\n");
-        printf("3. Display final routing table (matrix form)\n");
-        printf("4. Change cost of an edge\n");
-        printf("5. Drop an edge\n");
-        printf("6. Print shortest path between two nodes\n");
-        printf("7. Exit\n");
-        printf("Enter choice: ");
-        scanf("%d", &choice);
-        if (choice == 1)
-        {
-            char rname[20];
-            printf("Enter router name: ");
-            scanf("%s", rname);
-            int idx = -1;
-            for (int i = 0; i < n; i++)
-                if (strcmp(name[i], rname) == 0) { idx = i; break; }
-            if (idx == -1)
-                printf("Invalid router name!\n");
-            else
-                displayTable(idx);
-        }
-        else if (choice == 2)
-        {
-            displayAllTables();
-        }
-        else if (choice == 3)
-        {
-            displayMatrix("FINAL ROUTING TABLE");
-        }
-        else if (choice == 4)
-        {
-            changeEdgeCost();
-        }
-        else if (choice == 5)
-        {
-            dropEdge();
-        }
-        else if (choice == 6)
-        {
-            printShortestPath();
-        }
-    } while (choice != 7);
-    printf("\nProgram terminated. Final result displayed above.\n");
-    return 0;
-}
+    if (idx1 == -1 || idx2 == -1
